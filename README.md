@@ -18,7 +18,16 @@ The file should contain:
   "guildId": "DISCORD_GUILD_ID"
 }
 ```
-
 Where BOT_TOKEN is the bot token taken from the discord application portal bot page
 DISCORD_CLIENT_ID is the application ID from ther discord application portal general information page
 DISCORD_GUILD_ID is the server ID of the server the bot is running in
+
+
+The bot currently makes use of hot reloads for saving while running the application. Please run with
+```sh
+npm run dev
+```
+In order to add a new command to the bot please utilize:
+```sh
+node deploy-commands.js
+```
