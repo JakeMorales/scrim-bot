@@ -1,0 +1,15 @@
+{
+  "devDependencies": {
+    "nodemon": "^3.1.5",
+    "tsc-watch": "^6.2.0",
+    "typescript": "^5.6.2"
+  },
+  "scripts": {
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "dev": "tsc-watch --onSuccess \"nodemon dist/index.js\""
+  },
+  "dependencies": {
+    "discord.js": "^14.16.2"
+  }
+}
