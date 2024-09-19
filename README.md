@@ -3,6 +3,11 @@
 ### Setup
 This bot makes use of the npm package discord.js.
 
+make sure to run
+```sh
+npm install
+```
+
 To run the bot, you'll need to add a config.json file to the root directory.
 
 The file should contain:
