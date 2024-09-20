@@ -65,7 +65,7 @@ describe('Signup basic', () => {
     lowPrioUsers.add('2')
     await signupCommand.execute(lowPrioInteraction)
     for (let i = 0; i<19; i++) {
-      // TODO make team name and users unique here
+      // TODO make team name and users unique here when we add uniqueness check
       await signupCommand.execute(interaction)
     }
     let scrimSignups = signups.get(channelId)
@@ -81,7 +81,7 @@ describe('Signup basic', () => {
     lowPrioUsers.add('2')
     await signupCommand.execute(lowPrioInteraction)
     for (let i = 0; i<30; i++) {
-      // TODO make team name and users unique here
+      // TODO make team name and users unique here when we add uniqueness check
       await signupCommand.execute(interaction)
     }
     await signupCommand.execute(lowPrioInteraction)
