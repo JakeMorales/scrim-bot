@@ -17,15 +17,27 @@ const lowPrioUsers_1 = __importDefault(require("../../models/lowPrioUsers"));
 module.exports = {
     data: new discord_js_1.SlashCommandBuilder()
         .setName('addlowprio')
-        .setDescription('Adds a user to the low priority list')
-        .addUserOption(option => option.setName('user')
-        .setDescription('User to add to low priority list')
-        .setRequired(true)),
+        .setDescription('Adds up to 3 users to the low priority list')
+        .addUserOption(option => option.setName('user1')
+        .setDescription('First user to add to low priority list')
+        .setRequired(true))
+        .addUserOption(option => option.setName('user2')
+        .setDescription('Second user to add to low priority list')
+        .setRequired(false))
+        .addUserOption(option => option.setName('user3')
+        .setDescription('Third user to add to low priority list')
+        .setRequired(false)),
     execute(interaction) {
         return __awaiter(this, void 0, void 0, function* () {
-            const user = interaction.options.getUser('user');
-            lowPrioUsers_1.default.add(user.id);
-            yield interaction.reply(`User ${user.username} has been added to the low priority list.`);
+            const user1 = interaction.options.getUser('user1');
+            const user2 = interaction.options.getUser('user2');
+            const user3 = interaction.options.getUser('user3');
+            const users = [user1, user2, user3].filter(user => user !== null);
+            users.forEach(user => {
+                lowPrioUsers_1.default.add(user.id);
+            });
+            const userNames = users.map(user => user.username).join(', ');
+            yield interaction.reply(`User(s) ${userNames} have been added to the low priority list.`);
         });
     }
 };
