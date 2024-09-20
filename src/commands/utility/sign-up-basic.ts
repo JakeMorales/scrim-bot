@@ -40,7 +40,7 @@ module.exports = {
 
         const channelSignups = signups.get(channelId) || { mainList: [], waitList: [] };
         if (channelSignups) {
-            const waitlistCutoff = 20;
+            const waitlistCutoff = 3;
             const { mainList, waitList } = channelSignups;
 
             const newTeam = { teamName, players: [player1, player2, player3] };
@@ -52,11 +52,15 @@ module.exports = {
             console.log('Main List:', mainList);
             console.log('Waitlist:', waitList);
 
-            if ((!isLowPrio) || (isLowPrio && mainList.length < waitlistCutoff)) {
+            if (mainList.length < waitlistCutoff) {
                 mainList.push(newTeam);
-            } else {
+            } else if(mainList.length >= waitlistCutoff) {
                 waitList.push(newTeam);
             }
+
+            console.log('After adding new team:');
+            console.log('Main List:', mainList);
+            console.log('Waitlist:', waitList);
 
             // Ensure the main list does not exceed the cutoff
             while (mainList.length > waitlistCutoff) {
@@ -66,18 +70,17 @@ module.exports = {
                     console.log("lowPrioTeam: ", lowPrioTeam);
                     waitList.push(lowPrioTeam);
                 } else {
-                    
                     waitList.unshift(mainList.pop()!);
                 }
             }
 
-            console.log('After adding new team:');
-            console.log('Main List:', mainList);
+            console.log('Waitlist control:');
             console.log('Waitlist:', waitList);
 
+
+
             if (waitList.length > 0) {
-                //TODO, these lists are unordered for some reason, figure it out.
-                const nonLowPrioWaitlist = waitList.filter(team => !team.players.some(player => lowPrioUsers.has(player.id))).reverse();
+                const nonLowPrioWaitlist = waitList.filter(team => !team.players.some(player => lowPrioUsers.has(player.id)));
                 const lowPrioWaitlist = waitList.filter(team => team.players.some(player => lowPrioUsers.has(player.id)));
 
                 console.log("lowPrioWaitlist: ", lowPrioWaitlist);
