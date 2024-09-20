@@ -20,12 +20,12 @@ module.exports = {
         const userId = interaction.user.id;
 
         if (!signups.has(channelId)) {
-            return interaction.reply(`No signups found for this channel.`);
+            return interaction.reply({content: `No signups found for this channel.`, ephemeral: true});
         }
 
         const channelSignups = signups.get(channelId);
         if (!channelSignups) {
-            return interaction.reply(`No signups found for this channel.`);
+            return interaction.reply({content: `No signups found for this channel.`, ephemeral: true});
         }
 
         const { mainList, waitList } = channelSignups;

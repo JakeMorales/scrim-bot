@@ -30,11 +30,11 @@ module.exports = {
             const teamName = interaction.options.getString('teamname');
             const userId = interaction.user.id;
             if (!signups_1.default.has(channelId)) {
-                return interaction.reply(`No signups found for this channel.`);
+                return interaction.reply({ content: `No signups found for this channel.`, ephemeral: true });
             }
             const channelSignups = signups_1.default.get(channelId);
             if (!channelSignups) {
-                return interaction.reply(`No signups found for this channel.`);
+                return interaction.reply({ content: `No signups found for this channel.`, ephemeral: true });
             }
             const { mainList, waitList } = channelSignups;
             const waitlistCutoff = 20;
