@@ -1,7 +1,9 @@
 // Importing SlashCommandBuilder is required for every slash command
 // We import PermissionFlagsBits so we can restrict this command usage
 // We also import ChannelType to define what kind of channel we are creating
-const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
+import { SlashCommandBuilder, PermissionFlagsBits, ChannelType } from 'discord.js';
+import { scrimSignupChannels } from '../../models/scrimChannelData';
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('createscrimsignup') // Command name matching file name
@@ -107,6 +109,7 @@ module.exports = {
                     // Since "text" is the default channel created, this could be ommitted
                 });
                 channelId = createdChannel.id;
+                
                 // If we managed to create the channel, edit the initial response with
                 // a success message
                 await interaction.editReply({
@@ -114,6 +117,7 @@ module.exports = {
                 });
 
                 if (channelId) {
+                    scrimSignupChannels.add(channelId);
                     const channel = await interaction.client.channels.cache.get(channelId);
                     if (channel && channel.isTextBased()) {
                         await channel.send(`Scrims will begin at ${channelTime} Eastern on the posted date. If there are fewer than 20 sign ups by 3:00pm on that day then scrims will be cancelled.\n\nWhen signing up please sign up with the format " Team Name - @ Player 1 @ Player 2 @ Player 3" If you use @TBD or a duplicate name you will lose your spot in the scrim. POI Draft will take place one hour before match start in DRAFT 1.\n\nIf we have enough teams for multiple lobbies, seeding will be announced before draft and additional drafts will happen in DRAFT 2, etc.\n\nLook in <#1267487335956746310> and this channel for codes and all necessary information, to be released the day of scrims`);

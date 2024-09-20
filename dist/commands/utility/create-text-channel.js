@@ -8,12 +8,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+Object.defineProperty(exports, "__esModule", { value: true });
 // Importing SlashCommandBuilder is required for every slash command
 // We import PermissionFlagsBits so we can restrict this command usage
 // We also import ChannelType to define what kind of channel we are creating
-const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
+const discord_js_1 = require("discord.js");
+const scrimChannelData_1 = require("../../models/scrimChannelData");
 module.exports = {
-    data: new SlashCommandBuilder()
+    data: new discord_js_1.SlashCommandBuilder()
         .setName('createscrimsignup') // Command name matching file name
         .setDescription('Creates a new scrim signup text channel')
         // Text channel name
@@ -42,7 +44,7 @@ module.exports = {
         // be able to use this command and this is what this line does.
         // Feel free to remove it if you want to allow any users to
         // create new channels
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
+        .setDefaultMemberPermissions(discord_js_1.PermissionFlagsBits.ManageChannels)
         // It's impossible to create normal text channels inside DMs, so
         // it's in your best interest in disabling this command through DMs
         // as well. Threads, however, can be created in DMs, but we will see
@@ -73,7 +75,7 @@ module.exports = {
                     // create another stray channel in the server.
                     const createdChannel = yield interaction.guild.channels.create({
                         name: chosenChannelName, // The name given to the channel by the user
-                        type: ChannelType.GuildText, // The type of the channel created.
+                        type: discord_js_1.ChannelType.GuildText, // The type of the channel created.
                         // Since "text" is the default channel created, this could be ommitted
                     });
                     // Notice how we are creating a channel in the list of channels
@@ -105,7 +107,7 @@ module.exports = {
                     // create another channel in the same category.
                     const createdChannel = yield interaction.channel.parent.children.create({
                         name: chosenChannelName, // The name given to the channel by the user
-                        type: ChannelType.GuildText, // The type of the channel created.
+                        type: discord_js_1.ChannelType.GuildText, // The type of the channel created.
                         // Since "text" is the default channel created, this could be ommitted
                     });
                     channelId = createdChannel.id;
@@ -115,6 +117,7 @@ module.exports = {
                         content: 'Your channel was successfully created in the same category!',
                     });
                     if (channelId) {
+                        scrimChannelData_1.scrimSignupChannels.add(channelId);
                         const channel = yield interaction.client.channels.cache.get(channelId);
                         if (channel && channel.isTextBased()) {
                             yield channel.send(`Scrims will begin at ${channelTime} Eastern on the posted date. If there are fewer than 20 sign ups by 3:00pm on that day then scrims will be cancelled.\n\nWhen signing up please sign up with the format " Team Name - @ Player 1 @ Player 2 @ Player 3" If you use @TBD or a duplicate name you will lose your spot in the scrim. POI Draft will take place one hour before match start in DRAFT 1.\n\nIf we have enough teams for multiple lobbies, seeding will be announced before draft and additional drafts will happen in DRAFT 2, etc.\n\nLook in <#1267487335956746310> and this channel for codes and all necessary information, to be released the day of scrims`);
