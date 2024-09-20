@@ -11,13 +11,13 @@ module.exports = {
         const channelId = interaction.channelId;
 
         if (!signups.has(channelId)) {
-            await interaction.reply('No teams have signed up in this channel yet.');
+            await interaction.reply({content: 'No teams have signed up in this channel yet.', ephemeral: true});
             return;
         }
 
         const channelSignups = signups.get(channelId) || { mainList: [], waitList: [] };
         if (!channelSignups) {
-            await interaction.reply('No teams have signed up in this channel yet.');
+            await interaction.reply({content: 'No teams have signed up in this channel yet.', ephemeral: true});
             return;
         }
 
@@ -33,7 +33,7 @@ module.exports = {
 
         const sendMessages = async (messages: string[]) => {
             for (const message of messages) {
-                await interaction.followUp(message);
+                await interaction.followUp({ content: message, ephemeral: true });
             }
         };
 
@@ -52,7 +52,7 @@ module.exports = {
         addTeamsToMessages(mainList, 0);
         addTeamsToMessages(waitList, mainList.length);
 
-        await interaction.reply(messages.shift()!);
+        await interaction.reply({content: messages.shift()!, ephemeral: true});
         await sendMessages(messages);
     }
 };

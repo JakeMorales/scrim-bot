@@ -23,12 +23,12 @@ module.exports = {
         return __awaiter(this, void 0, void 0, function* () {
             const channelId = interaction.channelId;
             if (!signups_1.default.has(channelId)) {
-                yield interaction.reply('No teams have signed up in this channel yet.');
+                yield interaction.reply({ content: 'No teams have signed up in this channel yet.', ephemeral: true });
                 return;
             }
             const channelSignups = signups_1.default.get(channelId) || { mainList: [], waitList: [] };
             if (!channelSignups) {
-                yield interaction.reply('No teams have signed up in this channel yet.');
+                yield interaction.reply({ content: 'No teams have signed up in this channel yet.', ephemeral: true });
                 return;
             }
             const { mainList, waitList } = channelSignups;
@@ -41,7 +41,7 @@ module.exports = {
             };
             const sendMessages = (messages) => __awaiter(this, void 0, void 0, function* () {
                 for (const message of messages) {
-                    yield interaction.followUp(message);
+                    yield interaction.followUp({ content: message, ephemeral: true });
                 }
             });
             let messages = [];
@@ -56,7 +56,7 @@ module.exports = {
             };
             addTeamsToMessages(mainList, 0);
             addTeamsToMessages(waitList, mainList.length);
-            yield interaction.reply(messages.shift());
+            yield interaction.reply({ content: messages.shift(), ephemeral: true });
             yield sendMessages(messages);
         });
     }
