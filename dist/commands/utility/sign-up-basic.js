@@ -46,47 +46,33 @@ module.exports = {
             }
             const channelSignups = signups_1.default.get(channelId) || { mainList: [], waitList: [] };
             if (channelSignups) {
-                const waitlistCutoff = 3;
+                const waitlistCutoff = 20;
                 const { mainList, waitList } = channelSignups;
                 const newTeam = { teamName, players: [player1, player2, player3] };
-                // Check if any player is in the low prio list
-                const isLowPrio = newTeam.players.some(player => lowPrioUsers_1.default.has(player.id));
-                console.log('Before adding new team:');
-                console.log('Main List:', mainList);
-                console.log('Waitlist:', waitList);
                 if (mainList.length < waitlistCutoff) {
                     mainList.push(newTeam);
                 }
                 else if (mainList.length >= waitlistCutoff) {
                     waitList.push(newTeam);
                 }
-                console.log('After adding new team:');
-                console.log('Main List:', mainList);
-                console.log('Waitlist:', waitList);
                 // Ensure the main list does not exceed the cutoff
                 while (mainList.length > waitlistCutoff) {
                     const lowPrioTeamIndex = mainList.findIndex(team => team.players.some(player => lowPrioUsers_1.default.has(player.id)));
                     if (lowPrioTeamIndex !== -1) {
                         const lowPrioTeam = mainList.splice(lowPrioTeamIndex, 1)[0];
-                        console.log("lowPrioTeam: ", lowPrioTeam);
                         waitList.push(lowPrioTeam);
                     }
                     else {
                         waitList.unshift(mainList.pop());
                     }
                 }
-                console.log('Waitlist control:');
-                console.log('Waitlist:', waitList);
                 if (waitList.length > 0) {
                     const nonLowPrioWaitlist = waitList.filter(team => !team.players.some(player => lowPrioUsers_1.default.has(player.id)));
                     const lowPrioWaitlist = waitList.filter(team => team.players.some(player => lowPrioUsers_1.default.has(player.id)));
-                    console.log("lowPrioWaitlist: ", lowPrioWaitlist);
-                    console.log("nonLowPrioWaitlist: ", nonLowPrioWaitlist);
                     // Update the signups with the adjusted lists
                     if (nonLowPrioWaitlist && lowPrioWaitlist) {
                         // Combine the non-low priority and low priority waitlists
                         const finalWaitlist = nonLowPrioWaitlist.concat(lowPrioWaitlist);
-                        console.log("finalWaitlist: ", finalWaitlist);
                         signups_1.default.set(channelId, { mainList, waitList: finalWaitlist });
                     }
                     else if (nonLowPrioWaitlist && !lowPrioWaitlist) {
