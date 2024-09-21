@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from 'discord.js';
+import {ChatInputCommandInteraction, SlashCommandBuilder} from 'discord.js';
 import lowPrioUsers from '../../models/lowPrioUsers';
 import signups from '../../models/signups';
 
@@ -27,12 +27,21 @@ module.exports = {
                 .setDescription('@player3')
                 .setRequired(true)),
 
-    async execute(interaction: any) {
+    async execute(interaction: ChatInputCommandInteraction) {
         const channelId = interaction.channelId;
         const teamName = interaction.options.getString('teamname');
         const player1 = interaction.options.getUser('player1');
         const player2 = interaction.options.getUser('player2');
         const player3 = interaction.options.getUser('player3');
+
+        if (!teamName) {
+          // TODO @Supreme whats the proper way to error out discord here?
+          return
+        }
+        else if (!player1 || !player2 || !player3) {
+          return
+        }
+
 
         if (!signups.has(channelId)) {
             signups.set(channelId, { mainList: [], waitList: [] });
@@ -45,42 +54,14 @@ module.exports = {
 
             const newTeam = { teamName, players: [player1, player2, player3] };
 
-            if (mainList.length < waitlistCutoff) {
-                mainList.push(newTeam);
-            } else if(mainList.length >= waitlistCutoff) {
-                waitList.push(newTeam);
-            }
-
-            // Ensure the main list does not exceed the cutoff
-            while (mainList.length > waitlistCutoff) {
-                const lowPrioTeamIndex = mainList.findIndex(team => team.players.some(player => lowPrioUsers.has(player.id)));
-                if (lowPrioTeamIndex !== -1) {
-                    const lowPrioTeam = mainList.splice(lowPrioTeamIndex, 1)[0];
-                    waitList.push(lowPrioTeam);
-                } else {
-                    waitList.unshift(mainList.pop()!);
-                }
-            }
-
-            if (waitList.length > 0) {
-                const nonLowPrioWaitlist = waitList.filter(team => !team.players.some(player => lowPrioUsers.has(player.id)));
-                const lowPrioWaitlist = waitList.filter(team => team.players.some(player => lowPrioUsers.has(player.id)));
-                
-                // Update the signups with the adjusted lists
-                if(nonLowPrioWaitlist && lowPrioWaitlist){
-                    // Combine the non-low priority and low priority waitlists
-                    const finalWaitlist = nonLowPrioWaitlist.concat(lowPrioWaitlist);
-                    signups.set(channelId, { mainList, waitList: finalWaitlist });
-                }
-                else if(nonLowPrioWaitlist && !lowPrioWaitlist){
-                    signups.set(channelId, { mainList, waitList });
-                }
-                
-                // Update the signups with the adjusted lists
-            } else {
-                signups.set(channelId, { mainList, waitList });
-            }
-
+            const allTeams = [...mainList, ...waitList]
+            allTeams.push(newTeam)
+            allTeams.sort((teamA, teamB) => {
+              const lowPrioAmountA = teamA.players.reduce((count, player) => lowPrioUsers.has(player.id) ? count + 1 : count, 0)
+              const lowPrioAmountB = teamB.players.reduce((count, player) => lowPrioUsers.has(player.id) ? count + 1 : count, 0)
+              return lowPrioAmountA - lowPrioAmountB
+            })
+            signups.set(channelId, { mainList: allTeams.splice(0, waitlistCutoff), waitList: allTeams });
             await interaction.reply(`Team ${teamName} signed up with players: ${player1}, ${player2}, ${player3}`);
         }
 
