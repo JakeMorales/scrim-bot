@@ -11,11 +11,16 @@ npm install
 To run the bot, you'll need to add a config.json file to the root directory.
 
 The file should contain:
-```markdown
+```json
 {
   "token": "BOT_TOKEN",
   "clientId": "DISCORD_CLIENT_ID",
-  "guildId": "DISCORD_GUILD_ID"
+  "guildId": "DISCORD_GUILD_ID",
+  "nhost": {
+    "adminSecret": "ADMIN_SECRET",
+    "subdomain": "subdomain",
+    "region": "region"
+  }
 }
 ```
 Where BOT_TOKEN is the bot token taken from the discord application portal bot page

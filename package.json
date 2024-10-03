@@ -7,7 +7,9 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
-    "discord.js": "^14.16.2"
+    "@nhost/nhost-js": "^3.1.10",
+    "discord.js": "^14.16.2",
+    "graphql": "^16.9.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.13",
