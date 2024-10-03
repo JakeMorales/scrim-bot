@@ -16,7 +16,11 @@ The file should contain:
   "token": "BOT_TOKEN",
   "clientId": "DISCORD_CLIENT_ID",
   "guildId": "DISCORD_GUILD_ID",
-  "nhostAdminSecret": "NHOST_ADMIN_SECRET"
+  "nhost": {
+    "adminSecret": "ADMIN_SECRET",
+    "subdomain": "subdomain",
+    "region": "region"
+  }
 }
 ```
 Where BOT_TOKEN is the bot token taken from the discord application portal bot page
