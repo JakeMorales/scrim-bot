@@ -2,6 +2,7 @@ import {nhostDb} from "../src/db/nhost.db";
 import {ErrorPayload, NhostClient} from "@nhost/nhost-js";
 import {JSONValue} from "../src/db/db";
 import {GraphQLError} from "graphql/error";
+import {PlayerInsert} from "../src/models/Player";
 
 let mockRequest: (query: string) => Promise<any> = jest.fn()
 
@@ -154,7 +155,14 @@ describe('DB connection', () => {
 
 
 
-  describe('insertIfNotExists()', () => {
+  const createPlayer = (discordId: string, displayName: string, overstatLink: string): PlayerInsert => {
+    return { discordId, displayName, overstatLink}
+  }
+  const zboy = createPlayer('316280734115430403', 'zboy', 'https://overstat.gg/player/749174.Zboy5z5/overview')
+  const supreme = createPlayer('244307424838811648', 'Supreme', 'https://overstat.gg/player/753380.Supreme/overview')
+  const theheuman = createPlayer('315310843317321732', 'TheHeuman', 'https://overstat.gg/player/357606.TheHeuman/overview')
+
+  describe('insert player()', () => {
     it("Should have correct mutation query with no overstat link", async () => {
       mockRequest = (query) => {
         const expected = `
@@ -215,6 +223,98 @@ describe('DB connection', () => {
       }
       const newID = await nhostDb.insertPlayerIfNotExists('316280734115430403', "zboy", "https://overstat.gg/player/749174.Zboy5z5/overview")
       expect(newID).toEqual("7605b2bf-1875-4415-a04b-75fe47768565")
+      expect.assertions(2)
+    })
+  })
+
+
+
+  describe('insert multiple players()', () => {
+    it("Should have correct mutation query", async () => {
+      mockRequest = (query) => {
+        const expected = `
+          mutation upsertPlayer {
+            insert_players(objects: [
+              {discord_id: "316280734115430403", display_name: "zboy"}
+              {discord_id: "244307424838811648", display_name: "Supreme"}
+              {discord_id: "315310843317321732", display_name: "TheHeuman"}
+            ]
+              on_conflict: {
+                constraint: players_discord_id_key,   # Unique constraint on discord_id
+                update_columns: [
+                  display_name  # necessary for graphql to actually return an id
+                ]
+              }
+            ) {
+              returning {
+                id
+              }
+           }
+
+            update_player_1: update_players(
+              where: {discord_id: {_eq: "316280734115430403"}},
+              _set: {
+                display_name: "zboy",
+                overstat_link: "https://overstat.gg/player/749174.Zboy5z5/overview",
+                elo: null
+              }
+            ) {
+              affected_rows
+            }
+
+            update_player_2: update_players(
+              where: {discord_id: {_eq: "244307424838811648"}},
+              _set: {
+                display_name: "Supreme",
+                overstat_link: "https://overstat.gg/player/753380.Supreme/overview",
+                elo: null
+              }
+            ) {
+              affected_rows
+            }
+
+            update_player_3: update_players(
+              where: {discord_id: {_eq: "315310843317321732"}},
+              _set: {
+                display_name: "TheHeuman",
+                overstat_link: "https://overstat.gg/player/357606.TheHeuman/overview",
+                elo: null
+              }
+            ) {
+              affected_rows
+            }
+          }
+        `
+        expect(query.replace(/\s+/g, ` `)).toEqual(expected.replace(/\s+/g, ` `))
+        return Promise.resolve({
+          "data": {
+            "insert_players": {
+              "returning": [
+                {
+                  "id": "11583f2c-184f-4ab5-9f6f-ff33f2741117"
+                },
+                {
+                  "id": "7605b2bf-1875-4415-a04b-75fe47768565"
+                },
+                {
+                  "id": "f272a11e-5b30-4aea-b596-af2464de59ba"
+                }
+              ]
+            },
+            "update_player_1": {
+              "affected_rows": 1
+            },
+            "update_player_2": {
+              "affected_rows": 1
+            },
+            "update_player_3": {
+              "affected_rows": 1
+            }
+          }
+        })
+      }
+      const newID = await nhostDb.insertPlayers([zboy, supreme, theheuman])
+      expect(newID).toEqual(["11583f2c-184f-4ab5-9f6f-ff33f2741117", "7605b2bf-1875-4415-a04b-75fe47768565", "f272a11e-5b30-4aea-b596-af2464de59ba"])
       expect.assertions(2)
     })
   })

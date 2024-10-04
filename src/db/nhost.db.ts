@@ -2,6 +2,7 @@ import {DB, JSONValue} from "./db";
 import configJson from '../../config.json';
 import {ErrorPayload, NhostClient} from "@nhost/nhost-js";
 import {GraphQLError} from "graphql/error";
+import {Player, PlayerInsert} from "../models/Player";
 const config: { nhost: {adminSecret: string, subdomain: string, region: string }} = configJson;
 
 class NhostDb extends DB {
@@ -91,7 +92,8 @@ class NhostDb extends DB {
     return Promise.resolve({});
   }
 
-  async insertPlayerIfNotExists(discordId: string, displayName: string, overstatLink?: string) {
+  // returns id
+  async insertPlayerIfNotExists(discordId: string, displayName: string, overstatLink?: string): Promise<string> {
     const overstatLinkObjectSuffix = overstatLink ? `, overstat_link: "${overstatLink}"` : ''
     const overstatLinkColumn = overstatLink ? `\n              overstat_link` : ''
     const query = `
@@ -115,6 +117,56 @@ class NhostDb extends DB {
     }
     const returnedData: { insert_players_one: { id: string} } = result.data as { insert_players_one: { id: string} };
     return returnedData.insert_players_one.id;
+  }
+
+  private generatePlayerUpdateQuery(player: PlayerInsert, uniqueQueryName: string) {
+    const overstatLink = player.overstatLink ? `"${player.overstatLink}"` : null;
+    return `
+      update_player_${uniqueQueryName}: update_players(
+         where: {discord_id: {_eq: "${player.discordId}"}},
+          _set: {
+            display_name: "${player.displayName}",
+            overstat_link: ${overstatLink},
+            elo: ${player.elo ?? null}
+          }
+        ) {
+          affected_rows
+        }
+    `
+  }
+
+  // returns list of id's
+  async insertPlayers(players: PlayerInsert[]): Promise<string[]> {
+    const playerUpdates = players.map((player, index) => this.generatePlayerUpdateQuery(player, (index + 1).toString())).join("\n\n")
+    const playerInsert = `
+      insert_players(objects: [
+        ${players.map((player) => `{discord_id: "${player.discordId}", display_name: "${player.displayName}"}`).join('\n')}
+      ]
+        on_conflict: {
+          constraint: players_discord_id_key,   # Unique constraint on discord_id
+          update_columns: [
+            display_name  # necessary for graphql to actually return an id
+          ]
+        }
+      ) {
+        returning {
+          id
+        }
+      }
+    `
+    const query = `
+      mutation upsertPlayer {
+        ${playerInsert}
+
+        ${playerUpdates}
+      }
+    `
+    const result: { data: JSONValue | null; error: GraphQLError[] | ErrorPayload | null } = await this.nhostClient.graphql.request(query)
+    if (!result.data || result.error) {
+      throw Error("Graph ql error: " + result.error)
+    }
+    const returnedData: { insert_players: { returning: { id: string}[] }} = result.data as { insert_players: { returning: { id: string}[] }};
+    return returnedData.insert_players.returning.map((entry) => entry.id);
   }
 }
 export const nhostDb = new NhostDb(config.nhost.adminSecret, config.nhost.region, config.nhost.subdomain)
