@@ -151,4 +151,71 @@ describe('DB connection', () => {
       expect.assertions(2)
     })
   })
+
+
+
+  describe('insertIfNotExists()', () => {
+    it("Should have correct mutation query with no overstat link", async () => {
+      mockRequest = (query) => {
+        const expected = `
+      mutation upsertPlayer {
+        insert_players_one(
+          object: {discord_id: "316280734115430403", display_name: "zboy"}
+          on_conflict: {
+            constraint: players_discord_id_key,  # Unique constraint on discord_id
+            update_columns: [
+              display_name
+            ]
+          }
+        ) {
+          id  # Return the ID of the player, whether newly inserted or found
+        }
+      }
+    `
+        expect(query).toEqual(expected)
+        return Promise.resolve({
+          data: {
+            insert_players_one: {
+              id: "7605b2bf-1875-4415-a04b-75fe47768565"
+            }
+          }
+        })
+      }
+      const newID = await nhostDb.insertPlayerIfNotExists('316280734115430403', "zboy")
+      expect(newID).toEqual("7605b2bf-1875-4415-a04b-75fe47768565")
+      expect.assertions(2)
+    })
+
+    it("Should have correct mutation query with overstat link", async () => {
+      mockRequest = (query) => {
+        const expected = `
+      mutation upsertPlayer {
+        insert_players_one(
+          object: {discord_id: "316280734115430403", display_name: "zboy", overstat_link: "https://overstat.gg/player/749174.Zboy5z5/overview"}
+          on_conflict: {
+            constraint: players_discord_id_key,  # Unique constraint on discord_id
+            update_columns: [
+              display_name
+              overstat_link
+            ]
+          }
+        ) {
+          id  # Return the ID of the player, whether newly inserted or found
+        }
+      }
+    `
+        expect(query).toEqual(expected)
+        return Promise.resolve({
+          data: {
+            insert_players_one: {
+              id: "7605b2bf-1875-4415-a04b-75fe47768565"
+            }
+          }
+        })
+      }
+      const newID = await nhostDb.insertPlayerIfNotExists('316280734115430403', "zboy", "https://overstat.gg/player/749174.Zboy5z5/overview")
+      expect(newID).toEqual("7605b2bf-1875-4415-a04b-75fe47768565")
+      expect.assertions(2)
+    })
+  })
 })

@@ -35,10 +35,11 @@ module.exports = {
         const player3 = interaction.options.getUser('player3');
 
         if (!teamName) {
-          // TODO @Supreme whats the proper way to error out discord here?
+          await interaction.reply(`Signup NOT registered, no team name provided`);
           return
         }
         else if (!player1 || !player2 || !player3) {
+          await interaction.reply(`Signup NOT registered, a team needs three players`);
           return
         }
 

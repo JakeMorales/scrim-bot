@@ -90,5 +90,31 @@ class NhostDb extends DB {
   customQuery(query: string): Promise<JSONValue> {
     return Promise.resolve({});
   }
+
+  async insertPlayerIfNotExists(discordId: string, displayName: string, overstatLink?: string) {
+    const overstatLinkObjectSuffix = overstatLink ? `, overstat_link: "${overstatLink}"` : ''
+    const overstatLinkColumn = overstatLink ? `\n              overstat_link` : ''
+    const query = `
+      mutation upsertPlayer {
+        insert_players_one(
+          object: {discord_id: "${discordId}", display_name: "${displayName}"${overstatLinkObjectSuffix}}
+          on_conflict: {
+            constraint: players_discord_id_key,  # Unique constraint on discord_id
+            update_columns: [
+              display_name${overstatLinkColumn}
+            ]
+          }
+        ) {
+          id  # Return the ID of the player, whether newly inserted or found
+        }
+      }
+    `
+    const result: { data: JSONValue | null; error: GraphQLError[] | ErrorPayload | null } = await this.nhostClient.graphql.request(query)
+    if (!result.data || result.error) {
+      throw Error("Graph ql error: " + result.error)
+    }
+    const returnedData: { insert_players_one: { id: string} } = result.data as { insert_players_one: { id: string} };
+    return returnedData.insert_players_one.id;
+  }
 }
 export const nhostDb = new NhostDb(config.nhost.adminSecret, config.nhost.region, config.nhost.subdomain)
