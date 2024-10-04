@@ -44,7 +44,7 @@ class NhostDb extends DB {
     return result.data;
   }
 
-  async post(tableName: string, data: Record<string, string>): Promise<string> {
+  async post(tableName: string, data: Record<string, any>): Promise<string> {
     const insertName = "insert_" + tableName;
     const objectsString = `(objects: [{ ${Object.keys(data).map((key) => `${key}: "${data[key]}"`)} }])`
     const query = `
@@ -88,89 +88,12 @@ class NhostDb extends DB {
     return Promise.resolve(false);
   }
 
-  customQuery(query: string): Promise<JSONValue> {
-    return Promise.resolve({});
-  }
-
-  // returns id
-  async insertPlayerIfNotExists(discordId: string, displayName: string, overstatLink?: string): Promise<string> {
-    const overstatLinkObjectSuffix = overstatLink ? `, overstat_link: "${overstatLink}"` : ''
-    const overstatLinkColumn = overstatLink ? `\n              overstat_link` : ''
-    const query = `
-      mutation upsertPlayer {
-        insert_players_one(
-          object: {discord_id: "${discordId}", display_name: "${displayName}"${overstatLinkObjectSuffix}}
-          on_conflict: {
-            constraint: players_discord_id_key,  # Unique constraint on discord_id
-            update_columns: [
-              display_name${overstatLinkColumn}
-            ]
-          }
-        ) {
-          id  # Return the ID of the player, whether newly inserted or found
-        }
-      }
-    `
+  async customQuery(query: string): Promise<JSONValue> {
     const result: { data: JSONValue | null; error: GraphQLError[] | ErrorPayload | null } = await this.nhostClient.graphql.request(query)
     if (!result.data || result.error) {
       throw Error("Graph ql error: " + result.error)
     }
-    const returnedData: { insert_players_one: { id: string} } = result.data as { insert_players_one: { id: string} };
-    return returnedData.insert_players_one.id;
-  }
-
-  private generatePlayerUpdateQuery(player: PlayerInsert, uniqueQueryName: string) {
-    const overstatSet = player.overstatLink ? `overstat_link: "${player.overstatLink}"` : '';
-    const eloSet = player.elo ? `elo: ${player.elo}` : '';
-    return `
-      update_player_${uniqueQueryName}: update_players(
-         where: {discord_id: {_eq: "${player.discordId}"}},
-          _set: {
-            display_name: "${player.displayName}",
-            ${overstatSet}${overstatSet && eloSet ? "," : ""}
-            ${eloSet}
-          }
-        ) {
-          affected_rows
-        }
-    `
-  }
-
-  /* returns list of id's
-   *
-   * Created a special method that inserts players if they do not exist, also takes special care not to overwrite overstats and elo if they are in DB but not included in player object
-   */
-  async insertPlayers(players: PlayerInsert[]): Promise<string[]> {
-    const playerUpdates = players.map((player, index) => this.generatePlayerUpdateQuery(player, (index + 1).toString())).join("\n\n")
-    const playerInsert = `
-      insert_players(objects: [
-        ${players.map((player) => `{discord_id: "${player.discordId}", display_name: "${player.displayName}"}`).join('\n')}
-      ]
-        on_conflict: {
-          constraint: players_discord_id_key,   # Unique constraint on discord_id
-          update_columns: [
-            display_name  # necessary for graphql to actually return an id
-          ]
-        }
-      ) {
-        returning {
-          id
-        }
-      }
-    `
-    const query = `
-      mutation upsertPlayer {
-        ${playerInsert}
-
-        ${playerUpdates}
-      }
-    `
-    const result: { data: JSONValue | null; error: GraphQLError[] | ErrorPayload | null } = await this.nhostClient.graphql.request(query)
-    if (!result.data || result.error) {
-      throw Error("Graph ql error: " + result.error)
-    }
-    const returnedData: { insert_players: { returning: { id: string}[] }} = result.data as { insert_players: { returning: { id: string}[] }};
-    return returnedData.insert_players.returning.map((entry) => entry.id);
+    return Promise.resolve(result.data);
   }
 }
 export const nhostDb = new NhostDb(config.nhost.adminSecret, config.nhost.region, config.nhost.subdomain)
