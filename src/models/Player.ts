@@ -3,12 +3,12 @@ export interface Player {
   discordId: string;
   displayName: string;
   overstatLink?: string;
-  elo?: string;
+  elo?: number;
 }
 
 export interface PlayerInsert {
   discordId: string;
   displayName: string;
   overstatLink?: string;
-  elo?: string;
+  elo?: number;
 }

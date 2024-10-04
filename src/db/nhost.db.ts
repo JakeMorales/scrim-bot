@@ -120,14 +120,15 @@ class NhostDb extends DB {
   }
 
   private generatePlayerUpdateQuery(player: PlayerInsert, uniqueQueryName: string) {
-    const overstatLink = player.overstatLink ? `"${player.overstatLink}"` : null;
+    const overstatSet = player.overstatLink ? `overstat_link: "${player.overstatLink}"` : '';
+    const eloSet = player.elo ? `elo: ${player.elo}` : '';
     return `
       update_player_${uniqueQueryName}: update_players(
          where: {discord_id: {_eq: "${player.discordId}"}},
           _set: {
             display_name: "${player.displayName}",
-            overstat_link: ${overstatLink},
-            elo: ${player.elo ?? null}
+            ${overstatSet}${overstatSet && eloSet ? "," : ""}
+            ${eloSet}
           }
         ) {
           affected_rows
@@ -135,7 +136,10 @@ class NhostDb extends DB {
     `
   }
 
-  // returns list of id's
+  /* returns list of id's
+   *
+   * Created a special method that inserts players if they do not exist, also takes special care not to overwrite overstats and elo if they are in DB but not included in player object
+   */
   async insertPlayers(players: PlayerInsert[]): Promise<string[]> {
     const playerUpdates = players.map((player, index) => this.generatePlayerUpdateQuery(player, (index + 1).toString())).join("\n\n")
     const playerInsert = `

@@ -155,11 +155,11 @@ describe('DB connection', () => {
 
 
 
-  const createPlayer = (discordId: string, displayName: string, overstatLink: string): PlayerInsert => {
-    return { discordId, displayName, overstatLink}
+  const createPlayer = (discordId: string, displayName: string, overstatLink?: string, elo?: number): PlayerInsert => {
+    return { discordId, displayName, overstatLink, elo}
   }
   const zboy = createPlayer('316280734115430403', 'zboy', 'https://overstat.gg/player/749174.Zboy5z5/overview')
-  const supreme = createPlayer('244307424838811648', 'Supreme', 'https://overstat.gg/player/753380.Supreme/overview')
+  const supreme = createPlayer('244307424838811648', 'Supreme', undefined, 1)
   const theheuman = createPlayer('315310843317321732', 'TheHeuman', 'https://overstat.gg/player/357606.TheHeuman/overview')
 
   describe('insert player()', () => {
@@ -255,8 +255,7 @@ describe('DB connection', () => {
               where: {discord_id: {_eq: "316280734115430403"}},
               _set: {
                 display_name: "zboy",
-                overstat_link: "https://overstat.gg/player/749174.Zboy5z5/overview",
-                elo: null
+                overstat_link: "https://overstat.gg/player/749174.Zboy5z5/overview"
               }
             ) {
               affected_rows
@@ -266,8 +265,7 @@ describe('DB connection', () => {
               where: {discord_id: {_eq: "244307424838811648"}},
               _set: {
                 display_name: "Supreme",
-                overstat_link: "https://overstat.gg/player/753380.Supreme/overview",
-                elo: null
+                elo: 1
               }
             ) {
               affected_rows
@@ -277,8 +275,7 @@ describe('DB connection', () => {
               where: {discord_id: {_eq: "315310843317321732"}},
               _set: {
                 display_name: "TheHeuman",
-                overstat_link: "https://overstat.gg/player/357606.TheHeuman/overview",
-                elo: null
+                overstat_link: "https://overstat.gg/player/357606.TheHeuman/overview"
               }
             ) {
               affected_rows
