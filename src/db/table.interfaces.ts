@@ -1,0 +1,20 @@
+export interface ScrimSignupsWithPlayers {
+  scrim_id
+  date_time
+  team_name
+  player_one_id
+  player_one_discord_id
+  player_one_display_name
+  player_one_overstat_link
+  player_one_elo
+  player_two_id
+  player_two_discord_id
+  player_two_display_name
+  player_two_overstat_link
+  player_two_elo
+  player_three_id
+  player_three_discord_id
+  player_three_display_name
+  player_three_overstat_link
+  player_three_elo
+}

@@ -38,8 +38,8 @@ export class Signups {
     return signupId;
   }
 
-  getSignups(): { mainList: ScrimSignup[], waitList: ScrimSignup[] } {
-    // make call to db for signups
+  getSignups(scrimId): { mainList: ScrimSignup[], waitList: ScrimSignup[] } {
+    const scrimData = this.db.getScrimSignupsWithPlayers(scrimId)
     // make call for all users who are low prio
     // sort teams into main list and wait list
     // set active

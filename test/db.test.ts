@@ -120,6 +120,34 @@ describe('DB connection', () => {
       expect(newID).toEqual("7605b2bf-1875-4415-a04b-75fe47768565")
       expect.assertions(2)
     })
+    it("Should have correct post query", async () => {
+      mockRequest = (query) => {
+        const expected = `
+      mutation {
+        insert_players(objects: [{ display_name: "Supreme",discord_id: "244307424838811648",elo: 1,stats: null }]) {
+          returning {
+            id
+          }
+        }
+      }
+    `
+        expect(query).toEqual(expected)
+        return Promise.resolve({
+          data: {
+            insert_players: {
+              returning: [
+                {
+                  id: "7605b2bf-1875-4415-a04b-75fe47768565"
+                }
+              ]
+            }
+          }
+        })
+      }
+      const newID = await nhostDb.post('players', {'display_name': "Supreme", 'discord_id': "244307424838811648", elo: 1, stats: null})
+      expect(newID).toEqual("7605b2bf-1875-4415-a04b-75fe47768565")
+      expect.assertions(2)
+    })
   })
 
   describe('delete()', () => {
@@ -229,7 +257,7 @@ describe('DB connection', () => {
 
 
 
-  describe('insert multiple players()', () => {
+  describe('insert multiple players', () => {
     it("Should have correct mutation query", async () => {
       mockRequest = (query) => {
         const expected = `

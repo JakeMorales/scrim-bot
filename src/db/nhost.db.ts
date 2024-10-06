@@ -44,9 +44,10 @@ class NhostDb extends DB {
     return result.data;
   }
 
-  async post(tableName: string, data: Record<string, any>): Promise<string> {
+  async post(tableName: string, data: Record<string, string | number | null>): Promise<string> {
     const insertName = "insert_" + tableName;
-    const objectsString = `(objects: [{ ${Object.keys(data).map((key) => `${key}: "${data[key]}"`)} }])`
+    // TODO this assumes all values are strings, with "${data[key]}" how to exclude quotations for numeric or null values
+    const objectsString = `(objects: [{ ${Object.keys(data).map((key) => this.createGraphObject(key, data[key]))} }])`
     const query = `
       mutation {
         ${insertName}${objectsString} {
@@ -58,6 +59,9 @@ class NhostDb extends DB {
     `
     const result: { data: JSONValue | null; error: GraphQLError[] | ErrorPayload | null } = await this.nhostClient.graphql.request(query)
     if (!result.data || result.error) {
+      console.log(query)
+      console.log(result.data)
+      console.log(result.error)
       throw Error("Graph ql error: " + result.error)
     }
     const returnedData: Record<string, { returning: { id: string}[] }> = result.data as Record<string, { returning: { id: string}[] }>
@@ -94,6 +98,16 @@ class NhostDb extends DB {
       throw Error("Graph ql error: " + result.error)
     }
     return Promise.resolve(result.data);
+  }
+
+  private createGraphObject(key: string, value: string | number | null) {
+    if (typeof value === "string") {
+      return `${key}: "${value}"`
+    }
+    else if (value === null) {
+      return `${key}: null`
+    }
+    return `${key}: ${value}`
   }
 }
 export const nhostDb = new NhostDb(config.nhost.adminSecret, config.nhost.region, config.nhost.subdomain)

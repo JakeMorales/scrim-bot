@@ -1,4 +1,5 @@
 import {PlayerInsert} from "../models/Player";
+import {ScrimSignupsWithPlayers} from "./table.interfaces";
 
 export type JSONValue =
   | string
@@ -22,6 +23,15 @@ export abstract class DB {
   abstract delete(tableName: string, id: string): Promise<string>;
   abstract customQuery(query: string): Promise<JSONValue>;
 
+  createNewScrim(dateTime: Date, discordChannel: string, skill: number, overstatLink: string | null = null): Promise<string> {
+    return this.post("scrims", {
+      date_time_field: dateTime.toISOString(),
+      skill,
+      overstat_link: overstatLink,
+      discord_channel: discordChannel,
+    })
+  }
+
   addScrimSignup(teamName: string, scrimId: string, playerId: string, playerTwoId: string, playerThreeId: string, combinedElo: number | null = null): Promise<string> {
     return this.post("scrim_signups", {
       team_name: teamName,
@@ -29,7 +39,7 @@ export abstract class DB {
       player_one_id: playerId,
       player_two_id: playerTwoId,
       player_three_id: playerThreeId,
-      combined_elo: combinedElo
+      // combined_elo: combinedElo
     })
   }
 
@@ -91,7 +101,38 @@ export abstract class DB {
     return returnedData.insert_players.returning.map((entry) => entry.id);
   }
 
+  async getScrimSignupsWithPlayers(scrimId: string): Promise<ScrimSignupsWithPlayers[]> {
+    const query = `
+      query GetScrimSignupsWithPlayers {
+        get_scrim_signups_with_players(args: { scrim_id_search: "${scrimId}" }) {
+          scrim_id
+          date_time
+          team_name
+          player_one_id
+          player_one_discord_id
+          player_one_display_name
+          player_one_overstat_link
+          player_one_elo
+          player_two_id
+          player_two_discord_id
+          player_two_display_name
+          player_two_overstat_link
+          player_two_elo
+          player_three_id
+          player_three_discord_id
+          player_three_display_name
+          player_three_overstat_link
+          player_three_elo
+        }
+      }
+    `
 
+    const result: JSONValue = await this.customQuery(query);
+    const returnedData: {
+      get_scrim_signups_with_players: ScrimSignupsWithPlayers[]
+    } = result as unknown as { get_scrim_signups_with_players: ScrimSignupsWithPlayers[]};
+    return returnedData.get_scrim_signups_with_players;
+  }
 
   private generatePlayerUpdateQuery(player: PlayerInsert, uniqueQueryName: string) {
     const overstatSet = player.overstatLink ? `overstat_link: "${player.overstatLink}"` : '';
