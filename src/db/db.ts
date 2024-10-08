@@ -1,5 +1,5 @@
 import {PlayerInsert} from "../models/Player";
-import {ScrimSignupsWithPlayers} from "./table.interfaces";
+import {Scrims, ScrimSignupsWithPlayers} from "./table.interfaces";
 
 export type JSONValue =
   | string
@@ -15,20 +15,20 @@ export interface JSONObject {
 export interface JSONArray extends Array<JSONValue> { }
 
 export abstract class DB {
-  abstract get(tableName: string, fieldsToSearch: Record<string, string>, fieldsToReturn: string[]): Promise<JSONValue>;
+  abstract get(tableName: string, fieldsToSearch: Record<string, string | number | boolean | null>, fieldsToReturn: string[]): Promise<JSONValue>;
   abstract update(tableName: string, fields: string[]): Promise<boolean>;
   // returns id of new object as a string
-  abstract post(tableName: string, data: Record<string, any>): Promise<string>;
+  abstract post(tableName: string, data: Record<string, string | number | boolean | null>): Promise<string>;
   // returns id of the deleted object as a string
   abstract delete(tableName: string, id: string): Promise<string>;
   abstract customQuery(query: string): Promise<JSONValue>;
 
-  createNewScrim(dateTime: Date, discordChannel: string, skill: number, overstatLink: string | null = null): Promise<string> {
+  createNewScrim(dateTime: Date, discordChannelID: string, skill: number, overstatLink: string | null = null): Promise<string> {
     return this.post("scrims", {
       date_time_field: dateTime.toISOString(),
       skill,
       overstat_link: overstatLink,
-      discord_channel: discordChannel,
+      discord_channel: discordChannelID,
     })
   }
 
@@ -39,7 +39,7 @@ export abstract class DB {
       player_one_id: playerId,
       player_two_id: playerTwoId,
       player_three_id: playerThreeId,
-      // combined_elo: combinedElo
+      combined_elo: combinedElo
     })
   }
 
@@ -99,6 +99,10 @@ export abstract class DB {
     const result: JSONValue = await this.customQuery(query);
     const returnedData: { insert_players: { returning: { id: string}[] }} = result as { insert_players: { returning: { id: string}[] }};
     return returnedData.insert_players.returning.map((entry) => entry.id);
+  }
+
+  getActiveScrims(): Promise<{ scrims: Partial<Scrims>[]}> {
+    return this.get('scrims', {"active": true}, ["discord_channel", "id"]) as Promise<{ scrims: Partial<Scrims>[]}>;
   }
 
   async getScrimSignupsWithPlayers(scrimId: string): Promise<ScrimSignupsWithPlayers[]> {

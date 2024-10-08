@@ -1,4 +1,4 @@
-import {signups, Signups} from "../src/models/signups";
+import {signups, ScrimSignups} from "../src/models/signups";
 import {DbMock} from "./mocks/db.mock";
 import {PlayerInsert} from "../src/models/Player";
 import {User} from "discord.js";

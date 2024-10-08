@@ -1,5 +1,6 @@
 import {DB, JSONValue} from "../../src/db/db";
 import {PlayerInsert} from "../../src/models/Player";
+import {Scrims, ScrimSignupsWithPlayers} from "../../src/db/table.interfaces";
 
 export class DbMock extends DB {
   customQueryResponse: JSONValue;
@@ -54,5 +55,20 @@ export class DbMock extends DB {
 
   async insertPlayers(players: PlayerInsert[]): Promise<string[]> {
     return Promise.resolve(this.insertPlayersResponse)
+  }
+
+  override getActiveScrims(): Promise<{ scrims: Partial<Scrims>[] }> {
+      return Promise.resolve({
+        "scrims": [
+          {
+            "id": "ebb385a2-ba18-43b7-b0a3-44f2ff5589b9",
+            "discord_channel": "something"
+          }
+        ]
+      })
+  }
+
+  override async getScrimSignupsWithPlayers(scrimId: string): Promise<ScrimSignupsWithPlayers[]> {
+    return Promise.resolve([]);
   }
 }

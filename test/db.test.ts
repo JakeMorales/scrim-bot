@@ -3,6 +3,7 @@ import {ErrorPayload, NhostClient} from "@nhost/nhost-js";
 import {JSONValue} from "../src/db/db";
 import {GraphQLError} from "graphql/error";
 import {PlayerInsert} from "../src/models/Player";
+import {Scrims} from "../src/db/table.interfaces";
 
 let mockRequest: (query: string) => Promise<any> = jest.fn()
 
@@ -70,7 +71,7 @@ describe('DB connection', () => {
 
 
 
-    it("Should have multiple search field", async () => {
+    it("Should have multiple search fields", async () => {
       mockRequest = (query) => {
         const expected = `
       query {
@@ -89,6 +90,33 @@ describe('DB connection', () => {
       expect(data).toEqual({ players: [{ id: "f272a11e-5b30-4aea-b596-af2464de59ba", display_name: "TheHeuman", overstat_link: "https://overstat.gg/player/357606.TheHeuman/overview"}]})
       expect.assertions(2)
     })
+
+    it("Should get active scrims", async () => {
+      mockRequest = (query) => {
+        const expected = `
+      query {
+        scrims(where: { _and: [{ active: { _eq: true } }]}) {
+          discord_channel
+          id
+        }
+      }
+    `
+        expect(query).toEqual(expected)
+        return Promise.resolve({
+          "data": {
+            "scrims": [
+              {
+                "id": "ebb385a2-ba18-43b7-b0a3-44f2ff5589b9",
+                "discord_channel": "something"
+              }
+            ]
+          }
+        })
+      }
+
+      await nhostDb.get('scrims', {"active": true}, ["discord_channel", "id"]) as { scrims: Partial<Scrims>[]}
+      expect.assertions(1)
+    })
   })
 
   describe('post()', () => {
@@ -96,7 +124,7 @@ describe('DB connection', () => {
       mockRequest = (query) => {
         const expected = `
       mutation {
-        insert_players(objects: [{ display_name: "Supreme",discord_id: "244307424838811648" }]) {
+        insert_players(objects: [{ display_name: "Supreme", discord_id: "244307424838811648" }]) {
           returning {
             id
           }
@@ -124,7 +152,7 @@ describe('DB connection', () => {
       mockRequest = (query) => {
         const expected = `
       mutation {
-        insert_players(objects: [{ display_name: "Supreme",discord_id: "244307424838811648",elo: 1,stats: null }]) {
+        insert_players(objects: [{ display_name: "Supreme", discord_id: "244307424838811648", elo: 1, stats: null }]) {
           returning {
             id
           }

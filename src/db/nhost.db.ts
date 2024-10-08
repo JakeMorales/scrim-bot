@@ -20,15 +20,15 @@ class NhostDb extends DB {
   }
 
   // TODO generate more complicated search queryies, not just _and { _eq }
-  private static generateSearchStringFromFields(fields: Record<string, string> | undefined): string {
+  private static generateSearchStringFromFields(fields: Record<string, string | number | boolean | null> | undefined): string {
     if (!fields) {
       return ''
     }
-    const searchStringArray = Object.keys(fields).map((fieldKey) => `{ ${fieldKey}: { _eq: "${fields[fieldKey]}" } }`);
+    const searchStringArray = Object.keys(fields).map((fieldKey) => `{ ${fieldKey}: { _eq: ${NhostDb.createValueString(fields[fieldKey])} } }`);
     return `(where: { _and: [${searchStringArray.join(", ")}]})`
   }
 
-  async get(tableName: string, fieldsToSearch: Record<string, string> | undefined, fieldsToReturn: string[]): Promise<JSONValue> {
+  async get(tableName: string, fieldsToSearch: Record<string, string | number | boolean | null> | undefined, fieldsToReturn: string[]): Promise<JSONValue> {
     const searchString = NhostDb.generateSearchStringFromFields(fieldsToSearch);
     const query = `
       query {
@@ -44,10 +44,10 @@ class NhostDb extends DB {
     return result.data;
   }
 
-  async post(tableName: string, data: Record<string, string | number | null>): Promise<string> {
+  async post(tableName: string, data: Record<string, string | number | boolean | null>): Promise<string> {
     const insertName = "insert_" + tableName;
-    // TODO this assumes all values are strings, with "${data[key]}" how to exclude quotations for numeric or null values
-    const objectsString = `(objects: [{ ${Object.keys(data).map((key) => this.createGraphObject(key, data[key]))} }])`
+    const objects = Object.keys(data).map((key) => `${key}: ${NhostDb.createValueString(data[key])}`).join(", ")
+    const objectsString = `(objects: [{ ${objects} }])`
     const query = `
       mutation {
         ${insertName}${objectsString} {
@@ -100,14 +100,14 @@ class NhostDb extends DB {
     return Promise.resolve(result.data);
   }
 
-  private createGraphObject(key: string, value: string | number | null) {
+  private static createValueString(value: string | number | boolean | null): string {
     if (typeof value === "string") {
-      return `${key}: "${value}"`
+      return `"${value}"`
     }
     else if (value === null) {
-      return `${key}: null`
+      return `null`
     }
-    return `${key}: ${value}`
+    return `${value}`
   }
 }
 export const nhostDb = new NhostDb(config.nhost.adminSecret, config.nhost.region, config.nhost.subdomain)

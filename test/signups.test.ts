@@ -1,15 +1,15 @@
-import {Signups} from "../src/models/signups";
+import {ScrimSignups} from "../src/models/signups";
 import {DbMock} from "./mocks/db.mock";
 import {PlayerInsert} from "../src/models/Player";
 import {User} from "discord.js";
 
 describe("Signups", () => {
   let dbMock: DbMock;
-  let signups: Signups;
+  let signups: ScrimSignups;
 
   beforeEach(() => {
     dbMock = new DbMock()
-    signups = new Signups(dbMock)
+    signups = new ScrimSignups(dbMock)
   })
 
   describe("addTeam()", () => {
@@ -91,9 +91,47 @@ describe("Signups", () => {
         return Promise.resolve(expectedSignup.signupId)
       })
 
-      const signupId = await signups.getSignups(expectedSignup.scrimId, expectedSignup.teamName, [theheuman, zboy, supreme])
+      const signupId = await signups.addTeam(expectedSignup.scrimId, expectedSignup.teamName, [theheuman, zboy, supreme])
       expect(signupId).toEqual(expectedSignup.signupId)
       expect.assertions(7)
+    })
+  })
+
+  describe("updateActiveScrims()", () => {
+    it("Should get active scrims", async () => {
+      signups.activeScrimSignups.clear()
+      jest.spyOn(dbMock, 'getActiveScrims').mockImplementation(() => {
+        return Promise.resolve({
+          "scrims": [
+            {
+              "id": "ebb385a2-ba18-43b7-b0a3-44f2ff5589b9",
+              "discord_channel": "something"
+            }
+          ]
+        })
+      })
+
+      await signups.updateActiveScrims()
+      expect(signups.scrimChannelMap.size).toEqual(1)
+      expect(signups.scrimChannelMap.get("something")).toEqual("ebb385a2-ba18-43b7-b0a3-44f2ff5589b9")
+    })
+  })
+
+  describe("createScrim()", () => {
+    it("Should create scrim", async () => {
+      const channelId = "a valid id"
+      signups.activeScrimSignups.clear()
+      signups.scrimChannelMap.clear()
+      jest.spyOn(dbMock, 'createNewScrim').mockImplementation((dateTime: Date, discordChannelID: string, skill: number) => {
+        expect(discordChannelID).toEqual(channelId)
+        expect(skill).toEqual(1)
+        return Promise.resolve("a valid scrim id")
+      })
+
+      await signups.createScrim(channelId, new Date())
+      expect(signups.activeScrimSignups.size).toEqual(1)
+      expect(signups.scrimChannelMap.get(channelId)).toEqual("a valid scrim id")
+      expect.assertions(4)
     })
   })
 
