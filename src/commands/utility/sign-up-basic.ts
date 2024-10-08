@@ -43,27 +43,18 @@ module.exports = {
           return
         }
 
-
-        if (!signups.has(channelId)) {
-            signups.set(channelId, { mainList: [], waitList: [] });
+        const scrimId = signups.scrimChannelMap.get(channelId as String);
+        if (scrimId) {
+          try {
+            const signupId = await signups.addTeam(scrimId, teamName, [player1, player2, player3])
+            interaction.reply(`Team ${teamName} signed up with players: ${player1}, ${player2}, ${player3}, Signup id: ${signupId}`);
+          }
+          catch (error) {
+            interaction.reply(`Team not created: ${error.message}`)
+          }
         }
-
-        const channelSignups = signups.get(channelId) || { mainList: [], waitList: [] };
-        if (channelSignups) {
-            const waitlistCutoff = 20;
-            const { mainList, waitList } = channelSignups;
-
-            const newTeam = { teamName, players: [player1, player2, player3] };
-
-            const allTeams = [...mainList, ...waitList]
-            allTeams.push(newTeam)
-            allTeams.sort((teamA, teamB) => {
-              const lowPrioAmountA = teamA.players.reduce((count, player) => lowPrioUsers.has(player.id) ? count + 1 : count, 0)
-              const lowPrioAmountB = teamB.players.reduce((count, player) => lowPrioUsers.has(player.id) ? count + 1 : count, 0)
-              return lowPrioAmountA - lowPrioAmountB
-            })
-            signups.set(channelId, { mainList: allTeams.splice(0, waitlistCutoff), waitList: allTeams });
-            await interaction.reply(`Team ${teamName} signed up with players: ${player1}, ${player2}, ${player3}`);
+        else if (scrimId) {
+          interaction.reply("Associated scrim not found, team not created, this is probably a configuration error, contact admins")
         }
 
     }

@@ -8,7 +8,6 @@ interface ScrimSignup {
   teamName: string;
   players: Player[];
   signupId: string;
-  lowPrio?: number;
 }
 
 export class ScrimSignups {
@@ -25,7 +24,6 @@ export class ScrimSignups {
     this.updateActiveScrims()
   }
 
-  // TODO, do not use get,post etc, wrap the methods in the db class for easy use here
   async updateActiveScrims() {
     const activeScrims: { scrims: Partial<Scrims>[]} = await this.db.getActiveScrims();
     for (const scrim of activeScrims.scrims) {
@@ -43,13 +41,35 @@ export class ScrimSignups {
     return scrimId
   }
 
+  /*
+   * TODO Check for reasons the team should not be signed up
+   *   * duplicate player
+   *   * duplicate name
+   *   * Future:
+   *     * offensive names?
+   */
   async addTeam(scrimId: string, teamName: string, players: User[]): Promise<string> {
     // potentially need to update active scrim signups here if we ever start creating scrims from something that is not the bot
     const scrim = this.activeScrimSignups.get(scrimId)
     if (!scrim) {
-      throw Error("No active scrims with that scrim id")
+      throw Error("No active scrim with that scrim id")
     } else if (players.length !== 3) {
       throw Error("Exactly three players must be provided")
+    } else if (players[0].id === players[1].id || players[0].id === players[2].id || players[1].id === players[2].id) {
+      throw Error("Duplicate player")
+    }
+    // yes this is a three deep for loop, this is a cry for help, please optimize this
+    for (const team of scrim) {
+      if (team.teamName === teamName) {
+        throw Error("Duplicate team name")
+      }
+      for (const id of team.players.map((player) => player.discordId)) {
+        for (const player of players) {
+          if (player.id === id) {
+            throw Error(`Player already signed up on different team: ${player.displayName} <@${id}> on team ${team.teamName}`)
+          }
+        }
+      }
     }
     const convertedPlayers: PlayerInsert[] = players.map((discordUser: User) => ({ discordId: discordUser.id as string, displayName: discordUser.displayName }))
     const playerIds = await this.db.insertPlayers(convertedPlayers)
@@ -77,7 +97,13 @@ export class ScrimSignups {
   }
 
   static sortTeams(teams: ScrimSignup[]): { mainList: ScrimSignup[], waitList: ScrimSignup[] } {
-    return { mainList: [], waitList: []}
+    const waitlistCutoff = 20;
+    teams.sort((teamA, teamB) => {
+      const lowPrioAmountA = teamA.players.reduce((count, player) => player.lowPrio ? count + 1 : count, 0)
+      const lowPrioAmountB = teamB.players.reduce((count, player) => player.lowPrio ? count + 1 : count, 0)
+      return lowPrioAmountA - lowPrioAmountB
+    })
+    return { mainList: teams.splice(0, waitlistCutoff), waitList: teams };
   }
 
   static convertDbToScrimSignup(dbTeamData: ScrimSignupsWithPlayers): ScrimSignup {

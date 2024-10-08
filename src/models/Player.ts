@@ -4,6 +4,7 @@ export interface Player {
   displayName: string;
   overstatLink?: string;
   elo?: number;
+  lowPrio?: number;
 }
 
 export interface PlayerInsert {
