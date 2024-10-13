@@ -68,9 +68,30 @@ class NhostDb extends DB {
     return returnedData[insertName].returning[0].id;
   }
 
-  async delete(tableName: string, id: string): Promise<string> {
+  // TODO use delete_by_pk field here? Probably more efficient
+  async deleteById(tableName: string, id: string): Promise<string> {
     const deleteName = "delete_" + tableName;
     const searchString = NhostDb.generateSearchStringFromFields({ id });
+    const query = `
+      mutation {
+        ${deleteName}${searchString} {
+          returning {
+            id
+          }
+        }
+      }
+    `
+    const result: { data: JSONValue | null; error: GraphQLError[] | ErrorPayload | null } = await this.nhostClient.graphql.request(query)
+    if (!result.data || result.error) {
+      throw Error("Graph ql error: " + result.error)
+    }
+    const returnedData: Record<string, { returning: { id: string}[] }> = result.data as Record<string, { returning: { id: string}[] }>
+    return returnedData[deleteName].returning[0].id;
+  }
+
+  async delete(tableName: string, fieldsToEqual: Record<string, string | number | boolean | null> | undefined,): Promise<string> {
+    const deleteName = "delete_" + tableName;
+    const searchString = NhostDb.generateSearchStringFromFields(fieldsToEqual);
     const query = `
       mutation {
         ${deleteName}${searchString} {

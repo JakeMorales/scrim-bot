@@ -29,7 +29,7 @@ export class DbMock extends DB {
     return Promise.resolve(this.customQueryResponse);
   }
 
-  delete(tableName: string, id: string): Promise<string> {
+  deleteById(tableName: string, id: string): Promise<string> {
     return Promise.resolve(this.deleteResponse);
   }
 

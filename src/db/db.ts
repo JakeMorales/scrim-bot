@@ -20,7 +20,8 @@ export abstract class DB {
   // returns id of new object as a string
   abstract post(tableName: string, data: Record<string, string | number | boolean | null>): Promise<string>;
   // returns id of the deleted object as a string
-  abstract delete(tableName: string, id: string): Promise<string>;
+  abstract deleteById(tableName: string, id: string): Promise<string>;
+  abstract delete(tableName: string, fieldsToEqual: Record<string, string | number | boolean | null>): Promise<string>;
   abstract customQuery(query: string): Promise<JSONValue>;
 
   createNewScrim(dateTime: Date, discordChannelID: string, skill: number, overstatLink: string | null = null): Promise<string> {
@@ -43,6 +44,12 @@ export abstract class DB {
     })
   }
 
+  removeScrimSignup(teamName: string, scrimId: string) {
+    return this.delete("scrim_signups", {
+      scrim_id: scrimId,
+      team_name: teamName,
+    });
+  }
   // returns id
   async insertPlayerIfNotExists(discordId: string, displayName: string, overstatLink?: string): Promise<string> {
     const overstatLinkObjectSuffix = overstatLink ? `, overstat_link: "${overstatLink}"` : ''

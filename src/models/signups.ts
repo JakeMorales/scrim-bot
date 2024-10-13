@@ -41,13 +41,6 @@ export class ScrimSignups {
     return scrimId
   }
 
-  /*
-   * TODO Check for reasons the team should not be signed up
-   *   * duplicate player
-   *   * duplicate name
-   *   * Future:
-   *     * offensive names?
-   */
   async addTeam(scrimId: string, teamName: string, players: User[]): Promise<string> {
     // potentially need to update active scrim signups here if we ever start creating scrims from something that is not the bot
     const scrim = this.activeScrimSignups.get(scrimId)

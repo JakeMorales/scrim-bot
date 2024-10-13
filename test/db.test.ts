@@ -179,7 +179,40 @@ describe('DB connection', () => {
   })
 
   describe('delete()', () => {
-    it("Should have correct delete query", async () => {
+    it("Should have correct delete by unique fields query", async () => {
+      mockRequest = (query) => {
+        const expected = `
+      mutation {
+        delete_scrim_signups(where: { _and: [{ scrim_id: { _eq: "ebb385a2-ba18-43b7-b0a3-44f2ff5589b9" } }, { team_name: { _eq: "Fineapples" } }]}) {
+          returning {
+            id
+          }
+        }
+      }
+    `
+        expect(query).toEqual(expected)
+        return Promise.resolve({
+          "data": {
+            "delete_scrim_signups": {
+              "returning": [
+                {
+                  "id": "6237fd9b-9f72-4748-96fb-620b8e087c1f"
+                }
+              ]
+            }
+          }
+        })
+      }
+
+      const deletedID = await nhostDb.delete("scrim_signups", {
+        scrim_id: "ebb385a2-ba18-43b7-b0a3-44f2ff5589b9",
+        team_name: "Fineapples",
+      });
+      expect(deletedID).toEqual("6237fd9b-9f72-4748-96fb-620b8e087c1f")
+      expect.assertions(2)
+    })
+
+    it("Should have correct delete by id query", async () => {
       mockRequest = (query) => {
         const expected = `
       mutation {
@@ -203,7 +236,7 @@ describe('DB connection', () => {
           }
         })
       }
-      const deletedID = await nhostDb.delete('players', "02ac47c9-bde8-4f74-abf6-59b2c534d965")
+      const deletedID = await nhostDb.deleteById('players', "02ac47c9-bde8-4f74-abf6-59b2c534d965")
       expect(deletedID).toEqual("02ac47c9-bde8-4f74-abf6-59b2c534d965")
       expect.assertions(2)
     })
