@@ -25,6 +25,7 @@ export abstract class DB {
   abstract deleteById(tableName: string, id: string): Promise<string>;
   abstract delete(tableName: string, fieldsToEqual: Record<string, DbValue>): Promise<string>;
   abstract customQuery(query: string): Promise<JSONValue>;
+  abstract replaceTeammate(scrimId: string, teamName: string, oldPlayerId: string, newPlayerId: string): Promise<JSONValue>
 
   createNewScrim(dateTime: Date, discordChannelID: string, skill: number, overstatLink: string | null = null): Promise<string> {
     return this.post("scrims", {
@@ -145,12 +146,6 @@ export abstract class DB {
       get_scrim_signups_with_players: ScrimSignupsWithPlayers[]
     } = result as unknown as { get_scrim_signups_with_players: ScrimSignupsWithPlayers[]};
     return returnedData.get_scrim_signups_with_players;
-  }
-
-  async replaceTeammate(scrimId: string, teamName: string, oldPlayerId: string, newPlayerId: string): Promise<JSONValue> {
-    // how do we know which player to replace?
-    // get specific scrim signup, check for equality to all player id's replace specific one, throw error if old player not found?
-    return this.update("scrim_signups", {scrim_id: scrimId, teamName: teamName}, { player_one_id: newPlayerId})
   }
 
   private generatePlayerUpdateQuery(player: PlayerInsert, uniqueQueryName: string) {

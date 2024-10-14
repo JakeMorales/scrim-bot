@@ -113,6 +113,71 @@ class NhostDb extends DB {
     return Promise.resolve({});
   }
 
+  async replaceTeammate(scrimId: string, teamName: string, oldPlayerId: string, newPlayerId: string):
+    Promise<{
+      team_name: string,
+      player_one_id: string
+      player_two_id: string
+      player_three_id: string
+      scrim_id: string
+  }> {
+    const query = `
+      mutation {
+  update_scrim_signups_many(
+    updates: [
+      {
+        where: {
+          scrim_id: { _eq: "${scrimId}" },
+          player_one_id: { _eq: "${oldPlayerId}" }
+        },
+        _set: { player_one_id: "${newPlayerId}" }
+      },
+      {
+        where: {
+          scrim_id: { _eq: "${scrimId}" },
+          player_two_id: { _eq: "${oldPlayerId}" }
+        },
+        _set: { player_two_id: "${newPlayerId}" }
+      },
+      {
+        where: {
+          scrim_id: { _eq: "${scrimId}" },
+          player_three_id: { _eq: "${oldPlayerId}" }
+        },
+        _set: { player_three_id: "${newPlayerId}" }
+      }
+    ]
+  ) {
+    returning {
+      team_name
+      player_one_id
+      player_two_id
+      player_three_id
+      scrim_id
+    }
+  }
+}
+`
+    const result: { update_scrim_signups_many: {returning: {
+          team_name: string,
+          player_one_id: string
+          player_two_id: string
+          player_three_id: string
+          scrim_id: string
+    }[]}[]} = await this.customQuery(query) as unknown as { update_scrim_signups_many: {returning: {
+          team_name: string,
+          player_one_id: string
+          player_two_id: string
+          player_three_id: string
+          scrim_id: string
+        }[]}[]};
+    const teamData = result.update_scrim_signups_many.find((returned) => !!returned.returning[0]?.team_name)
+    if (!teamData?.returning[0]) {
+      throw Error("Changes not made")
+    }
+    return teamData.returning[0]
+  }
+
   async customQuery(query: string): Promise<JSONValue> {
     const result: { data: JSONValue | null; error: GraphQLError[] | ErrorPayload | null } = await this.nhostClient.graphql.request(query)
     if (!result.data || result.error) {
