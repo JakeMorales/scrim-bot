@@ -1,4 +1,4 @@
-import {DB, JSONValue} from "./db";
+import {DB, DbValue, JSONValue} from "./db";
 import configJson from '../../config.json';
 import {ErrorPayload, NhostClient} from "@nhost/nhost-js";
 import {GraphQLError} from "graphql/error";
@@ -28,7 +28,7 @@ class NhostDb extends DB {
     return `(where: { _and: [${searchStringArray.join(", ")}]})`
   }
 
-  async get(tableName: string, fieldsToSearch: Record<string, string | number | boolean | null> | undefined, fieldsToReturn: string[]): Promise<JSONValue> {
+  async get(tableName: string, fieldsToSearch: Record<string, DbValue> | undefined, fieldsToReturn: string[]): Promise<JSONValue> {
     const searchString = NhostDb.generateSearchStringFromFields(fieldsToSearch);
     const query = `
       query {
@@ -44,7 +44,7 @@ class NhostDb extends DB {
     return result.data;
   }
 
-  async post(tableName: string, data: Record<string, string | number | boolean | null>): Promise<string> {
+  async post(tableName: string, data: Record<string, DbValue>): Promise<string> {
     const insertName = "insert_" + tableName;
     const objects = Object.keys(data).map((key) => `${key}: ${NhostDb.createValueString(data[key])}`).join(", ")
     const objectsString = `(objects: [{ ${objects} }])`
@@ -89,7 +89,7 @@ class NhostDb extends DB {
     return returnedData[deleteName].returning[0].id;
   }
 
-  async delete(tableName: string, fieldsToEqual: Record<string, string | number | boolean | null> | undefined,): Promise<string> {
+  async delete(tableName: string, fieldsToEqual: Record<string, DbValue> | undefined,): Promise<string> {
     const deleteName = "delete_" + tableName;
     const searchString = NhostDb.generateSearchStringFromFields(fieldsToEqual);
     const query = `
@@ -109,8 +109,8 @@ class NhostDb extends DB {
     return returnedData[deleteName].returning[0].id;
   }
 
-  update(tableName: string, fields: string[]): Promise<boolean> {
-    return Promise.resolve(false);
+  update(tableName: string, fieldsToEquate: Record<string, DbValue>, fieldsToUpdate: Record<string, DbValue>): Promise<JSONValue> {
+    return Promise.resolve({});
   }
 
   async customQuery(query: string): Promise<JSONValue> {
