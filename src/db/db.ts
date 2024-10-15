@@ -18,7 +18,7 @@ export interface JSONArray extends Array<JSONValue> { }
 
 export abstract class DB {
   abstract get(tableName: string, fieldsToSearch: Record<string, DbValue>, fieldsToReturn: string[]): Promise<JSONValue>;
-  abstract update(tableName: string, fieldsToEquate: Record<string, DbValue>, fieldsToUpdate: Record<string, DbValue>): Promise<JSONValue>;
+  abstract update(tableName: string, fieldsToEquate: Record<string, DbValue>, fieldsToUpdate: Record<string, DbValue>, fieldsToReturn: string[]): Promise<JSONValue>;
   // returns id of new object as a string
   abstract post(tableName: string, data: Record<string, DbValue>): Promise<string>;
   // returns id of the deleted object as a string
@@ -146,6 +146,10 @@ export abstract class DB {
       get_scrim_signups_with_players: ScrimSignupsWithPlayers[]
     } = result as unknown as { get_scrim_signups_with_players: ScrimSignupsWithPlayers[]};
     return returnedData.get_scrim_signups_with_players;
+  }
+
+  changeTeamName(scrimId: string, oldTeamName: string, newTeamName: string): Promise<JSONValue> {
+    return this.update('scrim_signups', {scrim_id: "ebb385a2-ba18-43b7-b0a3-44f2ff5589b9", team_name: "Fineapples"}, {team_name: "Dude Cube"}, ["team_name", "player_one_id", "player_two_id", "player_three_id", "scrim_id",])
   }
 
   private generatePlayerUpdateQuery(player: PlayerInsert, uniqueQueryName: string) {

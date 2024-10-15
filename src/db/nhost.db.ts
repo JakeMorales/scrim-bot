@@ -2,7 +2,6 @@ import {DB, DbValue, JSONValue} from "./db";
 import configJson from '../../config.json';
 import {ErrorPayload, NhostClient} from "@nhost/nhost-js";
 import {GraphQLError} from "graphql/error";
-import {Player, PlayerInsert} from "../models/Player";
 const config: { nhost: {adminSecret: string, subdomain: string, region: string }} = configJson;
 
 class NhostDb extends DB {
@@ -25,11 +24,15 @@ class NhostDb extends DB {
       return ''
     }
     const searchStringArray = Object.keys(fields).map((fieldKey) => `{ ${fieldKey}: { _eq: ${NhostDb.createValueString(fields[fieldKey])} } }`);
-    return `(where: { _and: [${searchStringArray.join(", ")}]})`
+    return `where: { _and: [${searchStringArray.join(", ")}]}`
   }
 
   async get(tableName: string, fieldsToSearch: Record<string, DbValue> | undefined, fieldsToReturn: string[]): Promise<JSONValue> {
-    const searchString = NhostDb.generateSearchStringFromFields(fieldsToSearch);
+    let searchString = NhostDb.generateSearchStringFromFields(fieldsToSearch);
+    if (searchString) {
+      // only add parentheses if we have something to search with
+      searchString = `(${searchString})`
+    }
     const query = `
       query {
         ${tableName}${searchString} {
@@ -71,7 +74,7 @@ class NhostDb extends DB {
   // TODO use delete_by_pk field here? Probably more efficient
   async deleteById(tableName: string, id: string): Promise<string> {
     const deleteName = "delete_" + tableName;
-    const searchString = NhostDb.generateSearchStringFromFields({ id });
+    const searchString = `(${NhostDb.generateSearchStringFromFields({ id })})`;
     const query = `
       mutation {
         ${deleteName}${searchString} {
@@ -89,9 +92,9 @@ class NhostDb extends DB {
     return returnedData[deleteName].returning[0].id;
   }
 
-  async delete(tableName: string, fieldsToEqual: Record<string, DbValue> | undefined,): Promise<string> {
+  async delete(tableName: string, fieldsToEqual: Record<string, DbValue>): Promise<string> {
     const deleteName = "delete_" + tableName;
-    const searchString = NhostDb.generateSearchStringFromFields(fieldsToEqual);
+    const searchString = `(${NhostDb.generateSearchStringFromFields(fieldsToEqual)})`;
     const query = `
       mutation {
         ${deleteName}${searchString} {
@@ -109,8 +112,26 @@ class NhostDb extends DB {
     return returnedData[deleteName].returning[0].id;
   }
 
-  update(tableName: string, fieldsToEquate: Record<string, DbValue>, fieldsToUpdate: Record<string, DbValue>): Promise<JSONValue> {
-    return Promise.resolve({});
+  async update(tableName: string, fieldsToEquate: Record<string, DbValue>, fieldsToUpdate: Record<string, DbValue>, fieldsToReturn: string[]): Promise<JSONValue> {
+    const updateName = "update_" + tableName;
+    const searchString = NhostDb.generateSearchStringFromFields(fieldsToEquate);
+    const fieldsToUpdateArray = Object.keys(fieldsToUpdate).map((key) => `${key}: ${NhostDb.createValueString(fieldsToUpdate[key])}`)
+    const setString = `_set: { ${fieldsToUpdateArray.join(',\n') } }`
+    const query = `
+      mutation {
+        ${updateName}( ${searchString}, ${setString} ) {
+          returning {
+            ${fieldsToReturn.join('\n')}
+          }
+        }
+      }
+    `
+    const result: { data: JSONValue | null; error: GraphQLError[] | ErrorPayload | null } = await this.nhostClient.graphql.request(query)
+    if (!result.data || result.error) {
+      throw Error("Graph ql error: " + result.error)
+    }
+    const returnedData: Record<string, { returning: { id: string}[] }> = result.data as Record<string, { returning: { id: string}[] }>
+    return returnedData[updateName].returning[0];
   }
 
   async replaceTeammate(scrimId: string, teamName: string, oldPlayerId: string, newPlayerId: string):
